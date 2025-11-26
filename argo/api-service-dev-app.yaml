@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api-service-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Ecarrillo1987/devops-sre-lab.git
+    targetRevision: main
+    path: k8s/overlays/dev/api-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devops-sre-lab
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
