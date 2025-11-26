@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME   = "api-service"
-        IMAGE_TAG    = "0.1.${env.BUILD_NUMBER}"
-        REGISTRY     = "docker.io/ECARRILLO1987"  // ajusta a tu usuario real de Docker Hub si quieres
+        IMAGE_NAME    = "api-service"
+        IMAGE_TAG     = "0.1.${env.BUILD_NUMBER}"
         K8S_NAMESPACE = "devops-sre-lab"
     }
 
@@ -15,49 +14,39 @@ pipeline {
             }
         }
 
-        stage('Unit tests / Lint') {
+        stage('Unit tests / Lint (simulado)') {
             steps {
                 sh '''
-                echo "[INFO] Running basic syntax check for FastAPI app"
-                python -m compileall apps/api-service/src || exit 1
+                echo "[INFO] Aquí normalmente correría tests y lint de la app FastAPI"
+                echo "[INFO] Por ejemplo: pytest, mypy, flake8, etc."
                 '''
             }
         }
 
-        stage('Build Docker image') {
+        stage('Build Docker image (simulado)') {
             steps {
                 sh '''
-                echo "[INFO] Building Docker image ${IMAGE_NAME}:${IMAGE_TAG}"
-                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} apps/api-service
+                echo "[INFO] Aquí normalmente haría el build de la imagen Docker"
+                echo "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} apps/api-service"
                 '''
             }
         }
 
-        stage('Push image to registry') {
-            when {
-                expression { return false } // habilita esto cuando tengas credenciales de Docker Hub
-            }
+        stage('Push image to registry (simulado)') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                 usernameVariable: 'DOCKER_USER',
-                                                 passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                    '''
-                }
+                sh '''
+                echo "[INFO] Aquí haría login al registry y push de la imagen"
+                echo "docker push <registry>/${IMAGE_NAME}:${IMAGE_TAG}"
+                '''
             }
         }
 
-        stage('Update k8s manifest (GitOps style)') {
-            when {
-                expression { return false } // esto es para demo; luego lo puedes habilitar
-            }
+        stage('Deploy to Kubernetes (GitOps style, simulado)') {
             steps {
                 sh '''
-                echo "[INFO] Updating k8s deployment image tag"
-                sed -i "s|image: api-service:.*|image: ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}|" k8s/base/api-service/deployment.yaml
+                echo "[INFO] Aquí normalmente actualizaría el manifiesto de k8s con la nueva imagen"
+                echo "sed -i 's/image: api-service:.*/image: api-service:${IMAGE_TAG}/' k8s/base/api-service/deployment.yaml"
+                echo "[INFO] Y luego ArgoCD/GitOps se encargaría de sincronizar con el cluster"
                 '''
             }
         }
