@@ -5,6 +5,7 @@ namespace: devops-sre-lab
 
 resources:
   - ../../../base/api-service
+  - secret-sre.yaml  
 
 patches:
   - target:
