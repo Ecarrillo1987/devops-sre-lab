@@ -4,10 +4,9 @@ kind: Kustomization
 namespace: devops-sre-lab
 
 resources:
-  - ../../base/api-service/deployment.yaml
-  - ../../base/api-service/service.yaml
+  - ../../../base/api-service/deployment.yaml
+  - ../../../base/api-service/service.yaml
 
-# Parche sencillo de ejemplo (podrías cambiar replicas, env vars, etc.)
 patches:
   - target:
       kind: Deployment
