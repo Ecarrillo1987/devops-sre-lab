@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api-service-prod
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/Ecarrillo1987/devops-sre-lab.git
+    targetRevision: main
+    path: k8s/overlays/prod/api-service   # 👈 overlay de PROD
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devops-sre-lab-prod        # 👈 ns de PROD
+
+  syncPolicy:
+    automated:
+      prune: true          # borra recursos que ya no estén en Git
+      selfHeal: true       # repara cambios manuales en el cluster
+    syncOptions:
+      - CreateNamespace=true

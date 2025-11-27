@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace donde vivirán los recursos de PROD
+namespace: devops-sre-lab-prod
+
+resources:
+  # Reutilizamos todo lo de la base (deployment, service, hpa, etc.)
+  - ../../../base/api-service
+
+  # Namespace de PROD (está en este mismo folder)
+  - namespace.yaml
+
+# Parches específicos de PROD
+patches:
+  # Ajustes de recursos / réplicas
+  - path: resources-prod.yaml
+    target:
+      kind: Deployment
+      name: api-service
+
+  # Service NodePort de PROD (puerto 30083)
+  - path: service-prod.yaml
+    target:
+      kind: Service
+      name: api-service

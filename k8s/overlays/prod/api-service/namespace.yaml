@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-sre-lab-prod
+  labels:
+    app: api-service
+    env: prod

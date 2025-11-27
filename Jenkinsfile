@@ -46,14 +46,14 @@ pipeline {
 
         stage('Deploy to Kubernetes (GitOps style)') {
             steps {
-                // >>> AQUÍ ESTABA EL PROBLEMA <<<
+                
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'EcarrilloGitHub',   // ID de tu credencial
                         usernameVariable: 'GIT_USER',
                         passwordVariable: 'GIT_PASS'
                     )
-                ]) {   // <--- ESTE BLOQUE { ... } ES OBLIGATORIO
+                ]) {  
 
                     sh """
                     echo "[INFO] Actualizando deployment con imagen ${FULL_IMAGE}"
