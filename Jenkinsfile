@@ -2,12 +2,11 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER   = "chancho1987"
-        IMAGE_NAME    = "api-service"
-        APP_VERSION   = "0.1"                      
-        IMAGE_TAG     = "${APP_VERSION}.${BUILD_NUMBER}"
-        FULL_IMAGE    = "${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-        K8S_NAMESPACE = "devops-sre-lab"
+        DOCKERHUB_USER = 'chancho1987'
+        IMAGE_NAME     = 'api-service'
+        IMAGE_TAG      = "0.1.${env.BUILD_NUMBER}"
+        FULL_IMAGE     = "${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+        K8S_NAMESPACE  = 'devops-sre-lab'
     }
 
     stages {
@@ -17,7 +16,7 @@ pipeline {
             }
         }
 
-        stage('Unit tests / Lint') {
+        stage('Unit tests / Lint (simulado)') {
             steps {
                 sh '''
                 echo "[INFO] Aquí normalmente correría tests y lint de la app FastAPI"
@@ -26,67 +25,61 @@ pipeline {
             }
         }
 
-        // 🔹 Build REAL de la imagen Docker
-        stage('Build Docker image') {
+        stage('Build Docker image (real)') {
             steps {
                 sh """
-                echo "[INFO] Construyendo imagen Docker real..."
+                echo "[INFO] Construyendo imagen Docker ${FULL_IMAGE}"
                 docker build -t ${FULL_IMAGE} apps/api-service
-                echo "[INFO] Imagen construida:"
-                docker images | grep ${IMAGE_NAME} || true
                 """
             }
         }
 
-        // 🔹 Push REAL a Docker Hub
-        stage('Push image to registry') {
+        stage('Push image to registry (real)') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'REG_USER',
-                    passwordVariable: 'REG_PASS'
-                )]) {
-                    sh """
-                    echo "[INFO] Login en Docker Hub..."
-                    echo "${REG_PASS}" | docker login -u "${REG_USER}" --password-stdin
-
-                    echo "[INFO] Pushing image ${FULL_IMAGE}"
-                    docker push ${FULL_IMAGE}
-                    """
-                }
+                // Aquí asumo que ya tenías otro withCredentials para Docker Hub
+                sh """
+                echo "[INFO] Pusheando imagen ${FULL_IMAGE}"
+                docker push ${FULL_IMAGE}
+                """
             }
         }
 
-        // 🔹 Actualizar manifiesto de k8s (GitOps style)
         stage('Deploy to Kubernetes (GitOps style)') {
             steps {
+                // >>> AQUÍ ESTABA EL PROBLEMA <<<
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'EcarrilloGitHub',   // <-- ID de la credencial de tu captura
+                        credentialsId: 'EcarrilloGitHub',   // ID de tu credencial
                         usernameVariable: 'GIT_USER',
                         passwordVariable: 'GIT_PASS'
                     )
-                ]) 
-                sh """
-                echo "[INFO] Actualizando deployment con imagen ${FULL_IMAGE}"
+                ]) {   // <--- ESTE BLOQUE { ... } ES OBLIGATORIO
 
-                git fetch origin
-                git checkout -B main origin/main
+                    sh """
+                    echo "[INFO] Actualizando deployment con imagen ${FULL_IMAGE}"
 
-                sed -i 's|image: .*/api-service:.*|image: ${FULL_IMAGE}|' k8s/base/api-service/deployment.yaml
+                    # Asegurarnos de estar sobre main
+                    git fetch origin
+                    git checkout -B main origin/main
 
-                echo "[INFO] Diff de cambios:"
-                git diff k8s/base/api-service/deployment.yaml || true
+                    # Actualizar la imagen en el deployment base
+                    sed -i 's|image: .*/api-service:.*|image: ${FULL_IMAGE}|' k8s/base/api-service/deployment.yaml
 
-                git config user.email "jenkins@example.com"
-                git config user.name  "Jenkins CI"
+                    echo "[INFO] Diff de cambios:"
+                    git diff k8s/base/api-service/deployment.yaml || true
 
-                git add k8s/base/api-service/deployment.yaml
-                git commit -m "chore: bump api-service image to ${IMAGE_TAG}" || echo "[INFO] No hay cambios para commitear"
+                    # Config de usuario solo para el commit
+                    git config user.email "jenkins@example.com"
+                    git config user.name  "Jenkins CI"
 
-                git push https://${GIT_USER}:${GIT_PASS}@github.com/Ecarrillo1987/devops-sre-lab.git main
+                    # Commit si hay cambios
+                    git add k8s/base/api-service/deployment.yaml
+                    git commit -m "chore: bump api-service image to ${IMAGE_TAG}" || echo "[INFO] No hay cambios para commitear"
 
-                """
+                    # Push usando las credenciales de Jenkins
+                    git push https://${GIT_USER}:${GIT_PASS}@github.com/Ecarrillo1987/devops-sre-lab.git main
+                    """
+                }
             }
         }
     }
