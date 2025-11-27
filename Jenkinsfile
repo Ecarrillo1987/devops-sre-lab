@@ -60,18 +60,32 @@ pipeline {
         // 🔹 Actualizar manifiesto de k8s (GitOps style)
         stage('Deploy to Kubernetes (GitOps style)') {
             steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'EcarrilloGitHub',   // <-- ID de la credencial de tu captura
+                        usernameVariable: 'GIT_USER',
+                        passwordVariable: 'GIT_PASS'
+                    )
+                ]) 
                 sh """
                 echo "[INFO] Actualizando deployment con imagen ${FULL_IMAGE}"
 
-                # Opción sencilla: reemplazar la línea de image en el deployment base
+                git fetch origin
+                git checkout -B main origin/main
+
                 sed -i 's|image: .*/api-service:.*|image: ${FULL_IMAGE}|' k8s/base/api-service/deployment.yaml
+
+                echo "[INFO] Diff de cambios:"
+                git diff k8s/base/api-service/deployment.yaml || true
 
                 git config user.email "jenkins@example.com"
                 git config user.name  "Jenkins CI"
-                git status
 
-                git commit -am "chore: bump api-service image to ${IMAGE_TAG}" || echo "No hay cambios que commitear"
-                git push origin main
+                git add k8s/base/api-service/deployment.yaml
+                git commit -m "chore: bump api-service image to ${IMAGE_TAG}" || echo "[INFO] No hay cambios para commitear"
+
+                git push https://${GIT_USER}:${GIT_PASS}@github.com/Ecarrillo1987/devops-sre-lab.git main
+
                 """
             }
         }
