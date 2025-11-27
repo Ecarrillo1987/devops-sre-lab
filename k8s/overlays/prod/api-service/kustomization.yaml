@@ -10,6 +10,7 @@ resources:
 
   # Namespace de PROD (está en este mismo folder)
   - namespace.yaml
+  - secret-sre.yaml  
 
 # Parches específicos de PROD
 patches:
