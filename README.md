@@ -18,33 +18,28 @@ Laboratorio práctico de DevOps / SRE donde se implementa un flujo **CI/CD + Git
 
 ```mermaid
 flowchart LR
-    Dev[Developer\nVS Code] -->|git push| GitHub
+  Dev[Developer] -->|git push| GitHub[(GitHub repo)]
 
-    subgraph CI[Jenkins CI]
-        J1[Checkout código] --> J2[Tests / Lint (simulado)]
-        J2 --> J3[Build imagen Docker\nchancho1987/api-service:TAG]
-        J3 --> J4[Push a Docker Hub]
-        J4 --> J5[Actualizar manifiesto K8s\n(k8s/base/api-service/deployment.yaml)]
-        J5 --> J6[Commit & Push a GitHub]
-    end
+  subgraph CI[Jenkins CI]
+    J1[Checkout] --> J2[Tests & Lint]
+    J2 --> J3[Build Docker image]
+    J3 --> J4[Push to Docker Hub]
+    J4 --> J5[Update K8s manifest]
+    J5 --> J6[Git commit & push]
+  end
 
-    GitHub -->|webhook/poll SCM| CI
-    GitHub -->|GitOps| ArgoCD
+  GitHub --> CI
+  GitHub --> Argo[ArgoCD]
 
-    subgraph GitOps[ArgoCD]
-        A1[App api-service-dev\npath: k8s/overlays/dev/api-service] --> K8sDev
-        A2[App api-service-prod\npath: k8s/overlays/prod/api-service] --> K8sProd
-    end
+  subgraph Cluster[Kubernetes cluster]
+    DevNS[Namespace devops-sre-lab] --> DevApp[api-service-dev]
+    ProdNS[Namespace devops-sre-lab-prod] --> ProdApp[api-service-prod]
+  end
 
-    subgraph Cluster[Kubernetes Cluster]
-        K8sDev[Namespace devops-sre-lab\nDeployment+Service+Secret+HPA]
-        K8sProd[Namespace devops-sre-lab-prod\nDeployment+Service+Secret+HPA]
-    end
-
-    UserDev[Usuario Dev] -->|HTTP| ApiDev[api-dev.local:30082/docs]
-    UserProd[Usuario Prod] -->|HTTP| ApiProd[api-prod.local:30083/docs]
-
+  Argo --> DevApp
+  Argo --> ProdApp
 Stack tecnológico
+
 
 Aplicación: FastAPI (Python) – apps/api-service
 
